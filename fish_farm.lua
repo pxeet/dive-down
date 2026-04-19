@@ -131,8 +131,41 @@ local function RecoverOxygen()
 end
 
 local function SellItems()
+    -- วาปไปที่ NPC
     SafeTeleport(SellNPCPosition)
     task.wait(0.5)
+
+    local char = LocalPlayer.Character
+    if not char then return end
+
+    -- ครั้งที่ 1: ค้นหา ProximityPrompt ของ NPC และกด
+    for _, prompt in ipairs(workspace:GetDescendants()) do
+        if prompt:IsA("ProximityPrompt") then
+            fireproximityprompt(prompt, prompt.HoldDuration)
+            task.wait(0.5)
+            break
+        end
+    end
+
+    -- ครั้งที่ 2: ค้นหาและกดปุ่มขาย
+    task.wait(0.3)
+    local playerGui = LocalPlayer:WaitForChild("PlayerGui")
+    for _, gui in ipairs(playerGui:GetChildren()) do
+        local sellButton = gui:FindFirstChild("SellButton", true) 
+            or gui:FindFirstChild("Sell", true)
+        
+        if sellButton then
+            if sellButton:IsA("TextButton") then
+                sellButton:Activate()
+            elseif sellButton:IsA("ImageButton") then
+                pcall(function()
+                    sellButton.MouseButton1Click:Fire()
+                end)
+            end
+            task.wait(0.3)
+            break
+        end
+    end
 end
 
 ----------------------------------------------------
