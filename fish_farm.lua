@@ -97,6 +97,39 @@ local function IsBackpackFull()
     return backpackItems >= MaxBackpackItems
 end
 
+local function ClickGuiButton(button)
+    if not button then return false end
+
+    if button:IsA("TextButton") then
+        local ok = pcall(function()
+            button:Activate()
+        end)
+        return ok
+    end
+
+    if button:IsA("ImageButton") then
+        local ok = pcall(function()
+            button.MouseButton1Click:Fire()
+        end)
+        if ok then
+            return true
+        end
+
+        local vim = game:GetService("VirtualInputManager")
+        if vim and button.AbsolutePosition and button.AbsoluteSize then
+            local x = button.AbsolutePosition.X + button.AbsoluteSize.X / 2
+            local y = button.AbsolutePosition.Y + button.AbsoluteSize.Y / 2
+            pcall(function()
+                vim:SendMouseButtonEvent(x, y, true, 1, nil, 0)
+                vim:SendMouseButtonEvent(x, y, false, 1, nil, 0)
+            end)
+            return true
+        end
+    end
+
+    return false
+end
+
 local function SellItems()
     -- ครั้งที่ 1: วาปไปหา NPC และกด ProximityPrompt
     print("[SELL] Teleporting to NPC position...")
@@ -138,12 +171,15 @@ local function SellItems()
             or gui:FindFirstChild("Sell", true)
             or gui:FindFirstChild("SellAll", true)
         
-        if sellButton and sellButton:IsA("GuiButton") then
-            print("[SELL] Found sell button:", sellButton:GetFullName())
-            sellButton:Activate()
-            foundSellButton = true
-            task.wait(1)
-            break
+        if sellButton then
+            print("[SELL] Found sell button:", sellButton:GetFullName(), sellButton.ClassName)
+            if ClickGuiButton(sellButton) then
+                foundSellButton = true
+                task.wait(1)
+                break
+            else
+                print("[SELL] Failed to click sell button:", sellButton:GetFullName())
+            end
         end
     end
 
@@ -151,10 +187,11 @@ local function SellItems()
         print("[SELL] Sell button not found in PlayerGui!")
         -- ลองค้นหา Frame หรือส่วนอื่น ๆ
         for _, obj in ipairs(playerGui:GetDescendants()) do
-            if obj.Name:lower():find("sell") or obj.Name:lower():find("sell") then
+            if obj.Name:lower():find("sell") then
                 print("[SELL] Found object with 'sell':", obj:GetFullName(), obj.ClassName)
             end
         end
+    end
     end
 
     -- กลับไปยังตำแหน่งเดิม
