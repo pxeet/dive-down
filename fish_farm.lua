@@ -121,9 +121,12 @@ local function SellItems()
             foundPrompt = true
             task.wait(1)
             break
+        end
     end
-
-    -- ครั้งที่ 2: หาและกดปุ่มขาย
+    
+    if not foundPrompt then
+        print("[SELL] No ProximityPrompt found in workspace!")
+    end
     print("[SELL] Waiting for UI and looking for Sell button...")
     task.wait(1)
     
