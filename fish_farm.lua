@@ -106,19 +106,19 @@ local function IsOxygenLow()
     local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
     if not playerGui then return false end
 
-    -- ค้นหา TextLabel ที่มีข้อความ "Oxygen: XX%"
+    -- ค้นหา TextLabel ใน HUD
     for _, obj in ipairs(playerGui:GetDescendants()) do
-        if obj:IsA("TextLabel") and obj.Text:find("Oxygen") then
-            print("[OXYGEN] Found oxygen text:", obj.Text)
+        if obj:IsA("TextLabel") then
+            print("[OXYGEN] Found TextLabel:", obj.Text)
             
-            -- แยกตัวเลขจากข้อความ เช่น "Oxygen: 90%" -> 90
+            -- แยกตัวเลขเปอร์เซ็นต์
             local oxygenPercent = tonumber(obj.Text:match("%d+"))
             
             if oxygenPercent then
-                print("[OXYGEN] Current oxygen:", oxygenPercent .. "%")
+                print("[OXYGEN] Current value:", oxygenPercent .. "%")
                 
                 if oxygenPercent <= OxygenLowThreshold then
-                    print("[OXYGEN] Oxygen low! Threshold:", OxygenLowThreshold .. "%")
+                    print("[OXYGEN] Low! Threshold:", OxygenLowThreshold .. "%")
                     return true
                 end
                 return false
@@ -126,7 +126,7 @@ local function IsOxygenLow()
         end
     end
 
-    print("[OXYGEN] Oxygen display not found")
+    print("[OXYGEN] Display not found")
     return false
 end
 
