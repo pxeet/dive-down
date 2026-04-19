@@ -10,6 +10,8 @@ local LocalPlayer = Players.LocalPlayer
 
 local StartPosition = CFrame.new(-1917, -2037, -1437)
 local ReturnPosition = CFrame.new(-1930, 2532, -1415)
+local SellNPCPosition = CFrame.new(-1930, 2532, -1415) -- ปรับตำแหน่ง NPC ที่ขายของ
+local MaxBackpackItems = 20 -- จำนวนสูงสุดของในกระเป๋า
 
 -- Priority order
 local PriorityOrder = {
@@ -85,6 +87,58 @@ local function CountVisit(model)
 end
 
 ----------------------------------------------------
+-- BACKPACK CHECK & AUTO SELL
+----------------------------------------------------
+local function IsBackpackFull()
+    local backpackItems = 0
+    if LocalPlayer.Backpack then
+        backpackItems = #LocalPlayer.Backpack:GetChildren()
+    end
+    return backpackItems >= MaxBackpackItems
+end
+
+local function SellItems()
+    -- ครั้งที่ 1: วาปไปหา NPC และกด ProximityPrompt
+    SafeTeleport(SellNPCPosition)
+    task.wait(0.5)
+
+    local char = LocalPlayer.Character
+    if not char then return end
+
+    -- หา NPC และ ProximityPrompt ของร้านขาย
+    local npcs = workspace:FindFirstChild("NPCs") or workspace:FindFirstChild("Game")
+    if not npcs then return end
+
+    for _, npc in ipairs(npcs:GetChildren()) do
+        local prompt = npc:FindFirstChildWhichIsA("ProximityPrompt", true)
+        if prompt then
+            fireproximityprompt(prompt, prompt.HoldDuration)
+            task.wait(0.5)
+            break
+        end
+    end
+
+    -- ครั้งที่ 2: หาและกดปุ่มขาย
+    task.wait(0.3)
+    local playerGui = LocalPlayer:WaitForChild("PlayerGui")
+    for _, gui in ipairs(playerGui:GetChildren()) do
+        local sellButton = gui:FindFirstChild("SellButton", true) 
+            or gui:FindFirstChild("Sell", true)
+            or gui:FindFirstChild("SellAll", true)
+        
+        if sellButton and sellButton:IsA("GuiButton") then
+            sellButton:Activate()
+            task.wait(0.3)
+            break
+        end
+    end
+
+    -- กลับไปยังตำแหน่งเดิม
+    task.wait(0.5)
+    SafeTeleport(StartPosition)
+end
+
+----------------------------------------------------
 -- GET SORTED FISH LIST (AFTER EVERY CATCH)
 ----------------------------------------------------
 local function GetSortedFish()
@@ -98,7 +152,7 @@ local function GetSortedFish()
             local zoneObject = model:FindFirstChild("ZoneObject")
 
             if zoneObject and zoneObject.Value
-            and zoneObject.Value.Name == "iceArea" then
+            and zoneObject.Value.Name == "IceArea" then
                 tempList[#tempList+1] = model
             end
         end
@@ -125,6 +179,14 @@ end
 ----------------------------------------------------
 local function TeleportAndFire()
     while getgenv().FishFarmLoop do
+        -- ตรวจสอบว่าเต็มหรือไม่
+        if IsBackpackFull() then
+            print("Backpack full! Selling items...")
+            SellItems()
+            task.wait(1)
+            continue
+        end
+
         local fishList = GetSortedFish()
 
         for _, model in ipairs(fishList) do
