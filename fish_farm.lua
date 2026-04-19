@@ -99,43 +99,66 @@ end
 
 local function SellItems()
     -- ครั้งที่ 1: วาปไปหา NPC และกด ProximityPrompt
+    print("[SELL] Teleporting to NPC position...")
     SafeTeleport(SellNPCPosition)
-    task.wait(0.5)
+    task.wait(1)
 
     local char = LocalPlayer.Character
-    if not char then return end
+    if not char then 
+        print("[SELL] Character not found!")
+        return 
+    end
 
-    -- หา NPC และ ProximityPrompt ของร้านขาย
-    local npcs = workspace:FindFirstChild("NPCs") or workspace:FindFirstChild("Game")
-    if not npcs then return end
-
-    for _, npc in ipairs(npcs:GetChildren()) do
-        local prompt = npc:FindFirstChildWhichIsA("ProximityPrompt", true)
-        if prompt then
+    -- หา NPC ทั้งหมดในพื้นที่ และค้นหา ProximityPrompt
+    print("[SELL] Searching for NPC with ProximityPrompt...")
+    local foundPrompt = false
+    
+    -- ค้นหา ProximityPrompt ทั้งใน Workspace
+    for _, prompt in ipairs(workspace:GetDescendants()) do
+        if prompt:IsA("ProximityPrompt") then
+            print("[SELL] Found ProximityPrompt:", prompt:GetFullName())
             fireproximityprompt(prompt, prompt.HoldDuration)
-            task.wait(0.5)
+            foundPrompt = true
+            task.wait(1)
             break
-        end
     end
 
     -- ครั้งที่ 2: หาและกดปุ่มขาย
-    task.wait(0.3)
+    print("[SELL] Waiting for UI and looking for Sell button...")
+    task.wait(1)
+    
     local playerGui = LocalPlayer:WaitForChild("PlayerGui")
+    local foundSellButton = false
+    
     for _, gui in ipairs(playerGui:GetChildren()) do
         local sellButton = gui:FindFirstChild("SellButton", true) 
             or gui:FindFirstChild("Sell", true)
             or gui:FindFirstChild("SellAll", true)
         
         if sellButton and sellButton:IsA("GuiButton") then
+            print("[SELL] Found sell button:", sellButton:GetFullName())
             sellButton:Activate()
-            task.wait(0.3)
+            foundSellButton = true
+            task.wait(1)
             break
         end
     end
 
+    if not foundSellButton then
+        print("[SELL] Sell button not found in PlayerGui!")
+        -- ลองค้นหา Frame หรือส่วนอื่น ๆ
+        for _, obj in ipairs(playerGui:GetDescendants()) do
+            if obj.Name:lower():find("sell") or obj.Name:lower():find("sell") then
+                print("[SELL] Found object with 'sell':", obj:GetFullName(), obj.ClassName)
+            end
+        end
+    end
+
     -- กลับไปยังตำแหน่งเดิม
+    print("[SELL] Returning to start position...")
     task.wait(0.5)
     SafeTeleport(StartPosition)
+    print("[SELL] Done!")
 end
 
 ----------------------------------------------------
