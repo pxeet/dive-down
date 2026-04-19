@@ -133,37 +133,39 @@ end
 local function SellItems()
     -- วาปไปที่ NPC
     SafeTeleport(SellNPCPosition)
-    task.wait(0.5)
+    task.wait(1)
 
     local char = LocalPlayer.Character
     if not char then return end
 
-    -- ครั้งที่ 1: ค้นหา ProximityPrompt ของ NPC และกด
+    -- ครั้งที่ 1: ค้นหา ProximityPrompt ของ NPC และกด (สำหรับกด E)
     for _, prompt in ipairs(workspace:GetDescendants()) do
         if prompt:IsA("ProximityPrompt") then
             fireproximityprompt(prompt, prompt.HoldDuration)
-            task.wait(0.5)
+            task.wait(1)
             break
         end
     end
 
     -- ครั้งที่ 2: ค้นหาและกดปุ่มขาย
-    task.wait(0.3)
+    task.wait(1)
     local playerGui = LocalPlayer:WaitForChild("PlayerGui")
-    for _, gui in ipairs(playerGui:GetChildren()) do
-        local sellButton = gui:FindFirstChild("SellButton", true) 
-            or gui:FindFirstChild("Sell", true)
-        
-        if sellButton then
-            if sellButton:IsA("TextButton") then
-                sellButton:Activate()
-            elseif sellButton:IsA("ImageButton") then
-                pcall(function()
-                    sellButton.MouseButton1Click:Fire()
-                end)
+    
+    -- ค้นหาปุ่มขายแบบ TextButton หรือ ImageButton
+    for _, descendant in ipairs(playerGui:GetDescendants()) do
+        if descendant:IsA("GuiButton") then
+            local name = descendant.Name:lower()
+            if name:find("sell") or descendant.Text:lower():find("sell") then
+                if descendant:IsA("TextButton") then
+                    descendant:Activate()
+                elseif descendant:IsA("ImageButton") then
+                    pcall(function()
+                        descendant.MouseButton1Click:Fire()
+                    end)
+                end
+                task.wait(0.5)
+                break
             end
-            task.wait(0.3)
-            break
         end
     end
 end
