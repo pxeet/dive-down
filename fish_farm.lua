@@ -12,6 +12,7 @@ local StartPosition = CFrame.new(-1917, -2037, -1437)
 local ReturnPosition = CFrame.new(-1930, 2532, -1415)
 local SellNPCPosition = CFrame.new(-1930, 2532, -1415) -- ปรับตำแหน่ง NPC ที่ขายของ
 local MaxBackpackItems = 20 -- จำนวนสูงสุดของในกระเป๋า
+local OxygenRecoverTime = 5 -- เวลาที่ต้องอยู่ที่พื้นผิวเพื่อให้ออกซิเจนเพิ่ม (วินาที)
 
 -- Priority order
 local PriorityOrder = {
@@ -97,6 +98,63 @@ local function IsBackpackFull()
     return backpackItems >= MaxBackpackItems
 end
 
+local function IsOxygenLow()
+    local char = LocalPlayer.Character
+    if not char then return false end
+
+    -- ตรวจสอบ Oxygen ใน PlayerGui (Health Bar หรือ Status)
+    local oxygenValue = nil
+    
+    -- วิธีที่ 1: ค้นหา Oxygen Value ใน PlayerGui
+    local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
+    if playerGui then
+        for _, obj in ipairs(playerGui:GetDescendants()) do
+            if obj:IsA("IntValue") and obj.Name:lower():find("oxygen") then
+                oxygenValue = obj.Value
+                print("[OXYGEN] Found oxygen value:", oxygenValue)
+                break
+            end
+            if obj:IsA("TextLabel") and obj.Text:lower():find("oxygen") then
+                print("[OXYGEN] Found oxygen text:", obj.Text)
+            end
+        end
+    end
+
+    -- วิธีที่ 2: ตรวจสอบ Humanoid State
+    local humanoid = char:FindFirstChild("Humanoid")
+    if humanoid and humanoid:FindFirstChild("OxygenValue") then
+        oxygenValue = humanoid.OxygenValue.Value
+        print("[OXYGEN] Found humanoid oxygen:", oxygenValue)
+    end
+
+    -- ถ้าเจอค่า เช็คว่าเยอะพอหรือไม่
+    if oxygenValue ~= nil then
+        return oxygenValue <= 0 or oxygenValue < 1
+    end
+
+    -- Fallback: ค้นหา Oxygen ในลักษณะอื่น ๆ
+    print("[OXYGEN] Scanning for oxygen status...")
+    for _, obj in ipairs(char:GetDescendants()) do
+        if obj.Name:lower():find("oxygen") then
+            print("[OXYGEN] Found oxygen object:", obj:GetFullName(), obj.ClassName)
+            if obj:IsA("IntValue") or obj:IsA("NumberValue") then
+                return obj.Value <= 0
+            end
+        end
+    end
+
+    return false
+end
+
+local function RecoverOxygen()
+    print("[OXYGEN] Oxygen is low! Going to surface...")
+    SafeTeleport(ReturnPosition)
+    task.wait(OxygenRecoverTime)
+    print("[OXYGEN] Oxygen recovered! Going back to farm location...")
+    SafeTeleport(StartPosition)
+    task.wait(0.5)
+end
+
 local function SellItems()
     -- มาวาปที่ NPC เท่านั้น ยังไม่ขาย
     print("[SELL] Teleporting to NPC position...")
@@ -146,9 +204,15 @@ end
 ----------------------------------------------------
 local function TeleportAndFire()
     while getgenv().FishFarmLoop do
+        -- ตรวจสอบออกซิเจนก่อน
+        if IsOxygenLow() then
+            RecoverOxygen()
+            continue
+        end
+
         -- ตรวจสอบว่าเต็มหรือไม่
         if IsBackpackFull() then
-            print("Backpack full! Selling items...")
+            print("Backpack full! Going to NPC...")
             SellItems()
             task.wait(1)
             continue
