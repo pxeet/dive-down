@@ -8,7 +8,7 @@ getgenv().FishFarmLoop = false
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
-local StartPosition = CFrame.new(-1891, 79, -1471)
+local StartPosition = CFrame.new(-1917, -2037, -1437)
 local ReturnPosition = CFrame.new(-1930, 2532, -1415)
 
 -- Priority order
