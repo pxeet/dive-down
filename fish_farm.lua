@@ -106,19 +106,13 @@ local function IsOxygenLow()
     local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
     if not playerGui then return false end
 
-    -- ค้นหา TextLabel ใน HUD
+    -- ค้นหา TextLabel ที่มีข้อความ "Oxygen: XX%" เท่านั้น
     for _, obj in ipairs(playerGui:GetDescendants()) do
-        if obj:IsA("TextLabel") then
-            print("[OXYGEN] Found TextLabel:", obj.Text)
-            
-            -- แยกตัวเลขเปอร์เซ็นต์
+        if obj:IsA("TextLabel") and obj.Text:find("Oxygen:") then
             local oxygenPercent = tonumber(obj.Text:match("%d+"))
             
             if oxygenPercent then
-                print("[OXYGEN] Current value:", oxygenPercent .. "%")
-                
                 if oxygenPercent <= OxygenLowThreshold then
-                    print("[OXYGEN] Low! Threshold:", OxygenLowThreshold .. "%")
                     return true
                 end
                 return false
@@ -126,25 +120,19 @@ local function IsOxygenLow()
         end
     end
 
-    print("[OXYGEN] Display not found")
     return false
 end
 
 local function RecoverOxygen()
-    print("[OXYGEN] Oxygen is low! Going to surface...")
     SafeTeleport(ReturnPosition)
     task.wait(OxygenRecoverTime)
-    print("[OXYGEN] Oxygen recovered! Going back to farm location...")
     SafeTeleport(StartPosition)
     task.wait(0.5)
 end
 
 local function SellItems()
-    -- มาวาปที่ NPC เท่านั้น ยังไม่ขาย
-    print("[SELL] Teleporting to NPC position...")
     SafeTeleport(SellNPCPosition)
     task.wait(0.5)
-    print("[SELL] Done!")
 end
 
 ----------------------------------------------------
@@ -196,7 +184,6 @@ local function TeleportAndFire()
 
         -- ตรวจสอบว่าเต็มหรือไม่
         if IsBackpackFull() then
-            print("Backpack full! Going to NPC...")
             SellItems()
             task.wait(1)
             continue
